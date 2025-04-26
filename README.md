@@ -13,3 +13,9 @@ hf_oauth_expiration_minutes: 480
 ---
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+
+---
+
+Save dependencies in `requirements.txt`
+
+`uv pip compile pyproject.toml -o requirements.txt`

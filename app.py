@@ -254,6 +254,7 @@ with gr.Blocks() as demo:
     gr.LoginButton()
 
     # --- Run a Single Question ---
+    gr.Markdown("# Run one question")
     from src.question_choices import get_question_choices
     api_url = DEFAULT_API_URL
     questions_url = f"{api_url}/questions"
@@ -279,6 +280,10 @@ with gr.Blocks() as demo:
 
     def call_run_one_and_submit(profile, selected_q):
         return run_one_and_submit(profile, get_index_from_question(selected_q))
+
+    
+
+    gr.Markdown("# Run all questions")
 
     run_single_button.click(
         fn=call_run_one_and_submit,
