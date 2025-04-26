@@ -1,6 +1,7 @@
 from src.question_fetcher import fetch_questions
+from src.constants import questions_url
 
-def get_question_choices(questions_url):
+def get_question_choices():
     """
     Fetches questions and returns a tuple (choices, index_map).
     - choices: List of question strings for UI selection.

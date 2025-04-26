@@ -1,14 +1,18 @@
-import os
-import gradio as gr
-import requests
-import pandas as pd
 from dotenv import load_dotenv
 
 load_dotenv()
+import os
+
+import requests
+import pandas as pd
+
+import gradio as gr
+
+from src.question_choices import get_question_choices
 
 # (Keep Constants as is)
 # --- Constants ---
-DEFAULT_API_URL = "https://agents-course-unit4-scoring.hf.space"
+from src.constants import DEFAULT_API_URL, questions_url, submit_url
 
 # --- Basic Agent Definition ---
 # ----- THIS IS WERE YOU CAN BUILD WHAT YOU WANT ------
@@ -17,7 +21,7 @@ class BasicAgent:
         print("BasicAgent initialized.")
     def __call__(self, question: str) -> str:
         print(f"Agent received question (first 50 chars): {question[:50]}...")
-        fixed_answer = "This is my default answer."
+        fixed_answer = f"This is my default answer for question: {question}"
         print(f"Agent returning fixed answer: {fixed_answer}")
         return fixed_answer
 
@@ -126,7 +130,7 @@ def run_and_submit_all(profile: gr.OAuthProfile | None):
         results_df = pd.DataFrame(results_log)
         return status_message, results_df
 
-def run_one_and_submit(profile: gr.OAuthProfile | None, question_index: int):
+def _run_one_and_submit_with_index(profile: gr.OAuthProfile | None, question_index: int):
     """
     Fetches questions, runs the BasicAgent on a specific question, submits the answer,
     and displays the result.
@@ -147,10 +151,6 @@ def run_one_and_submit(profile: gr.OAuthProfile | None, question_index: int):
     else:
         print("User not logged in.")
         return "Please Login to Hugging Face with the button.", None
-
-    api_url = DEFAULT_API_URL
-    questions_url = f"{api_url}/questions"
-    submit_url = f"{api_url}/submit"
 
     # 1. Instantiate Agent
     try:
@@ -255,10 +255,7 @@ with gr.Blocks() as demo:
 
     # --- Run a Single Question ---
     gr.Markdown("# Run one question")
-    from src.question_choices import get_question_choices
-    api_url = DEFAULT_API_URL
-    questions_url = f"{api_url}/questions"
-    question_choices, question_index_map = get_question_choices(questions_url)
+    question_choices, question_index_map = get_question_choices()
 
     question_dropdown = gr.Dropdown(
         choices=question_choices,
@@ -271,25 +268,16 @@ with gr.Blocks() as demo:
     single_status_output = gr.Textbox(label="Run Status / Submission Result", lines=5, interactive=False)
     single_results_table = gr.DataFrame(label="Questions and Agent Answers", wrap=True)
 
-    def get_index_from_question(selected_question):
-        # Map selected question string to its index
-        return question_index_map.get(selected_question, 0)
-
-    # --- Add OAuthProfile input for Gradio ---
-    # profile_input = gr.OAuthProfile()
-
-    def call_run_one_and_submit(profile, selected_q):
-        return run_one_and_submit(profile, get_index_from_question(selected_q))
-
-    
-
-    gr.Markdown("# Run all questions")
+    def run_one_and_submit(profile: gr.OAuthProfile | None, selected_q: str):
+        question_index = question_index_map.get(selected_q, 0)
+        return _run_one_and_submit_with_index(profile, question_index)
 
     run_single_button.click(
-        fn=call_run_one_and_submit,
+        fn=run_one_and_submit,
         inputs=[question_dropdown],
         outputs=[single_status_output, single_results_table]
     )
+
     run_button = gr.Button("Run Evaluation & Submit All Answers")
 
     status_output = gr.Textbox(label="Run Status / Submission Result", lines=5, interactive=False)
