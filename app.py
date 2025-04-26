@@ -1,19 +1,12 @@
 from dotenv import load_dotenv
-
-load_dotenv()
 import os
-
-import requests
 from src.submit_questions import submit_answers
 import pandas as pd
-
 import gradio as gr
-
 from src.question_choices import get_question_choices
-
-# --- Basic Agent Definition ---
-# Now imported from src.agent
 from src.agent import BasicAgent
+
+load_dotenv()
 
 def run_and_submit_all(profile: gr.OAuthProfile | None):
     """
