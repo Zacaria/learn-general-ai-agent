@@ -123,6 +123,112 @@ def run_and_submit_all( profile: gr.OAuthProfile | None):
         results_df = pd.DataFrame(results_log)
         return status_message, results_df
 
+def run_one_and_submit(profile: gr.OAuthProfile | None, question_index: int):
+    """
+    Fetches questions, runs the BasicAgent on a specific question, submits the answer,
+    and displays the result.
+    
+    Args:
+        profile: The user's OAuth profile
+        question_index: The index of the question to run
+    
+    Returns:
+        Tuple of (status message, results dataframe)
+    """
+    # --- Determine HF Space Runtime URL and Repo URL ---
+    space_id = os.getenv("SPACE_ID")
+
+    if profile:
+        username = f"{profile.username}"
+        print(f"User logged in: {username}")
+    else:
+        print("User not logged in.")
+        return "Please Login to Hugging Face with the button.", None
+
+    api_url = DEFAULT_API_URL
+    questions_url = f"{api_url}/questions"
+    submit_url = f"{api_url}/submit"
+
+    # 1. Instantiate Agent
+    try:
+        agent = BasicAgent()
+    except Exception as e:
+        print(f"Error instantiating agent: {e}")
+        return f"Error initializing agent: {e}", None
+    
+    agent_code = f"https://huggingface.co/spaces/{space_id}/tree/main"
+    print(agent_code)
+
+    # 2. Fetch Questions
+    print(f"Fetching questions from: {questions_url}")
+    from src.question_fetcher import fetch_questions
+    err, questions_data = fetch_questions(questions_url)
+    if err:
+        return err, None
+    
+    # Check if question_index is valid
+    if question_index < 0 or question_index >= len(questions_data):
+        return f"Invalid question index: {question_index}. Must be between 0 and {len(questions_data)-1}.", None
+    
+    # 3. Run Agent on specific question
+    results_log = []
+    answers_payload = []
+    
+    item = questions_data[question_index]
+    task_id = item.get("task_id")
+    question_text = item.get("question")
+    
+    if not task_id or question_text is None:
+        print(f"Invalid question item: {item}")
+        return "Invalid question item with missing task_id or question.", None
+    
+    try:
+        submitted_answer = agent(question_text)
+        answers_payload.append({"task_id": task_id, "submitted_answer": submitted_answer})
+        results_log.append({"Task ID": task_id, "Question": question_text, "Submitted Answer": submitted_answer})
+    except Exception as e:
+        print(f"Error running agent on task {task_id}: {e}")
+        results_log.append({"Task ID": task_id, "Question": question_text, "Submitted Answer": f"AGENT ERROR: {e}"})
+        return f"Agent error on question {question_index}: {e}", pd.DataFrame(results_log)
+
+    # 4. Prepare Submission 
+    submission_data = {"username": username.strip(), "agent_code": agent_code, "answers": answers_payload}
+    status_update = f"Agent finished. Submitting answer for question {question_index} for user '{username}'..."
+    print(status_update)
+
+    # 5. Submit
+    print(f"Submitting answer to: {submit_url}")
+    try:
+        response = requests.post(submit_url, json=submission_data, timeout=60)
+        response.raise_for_status()
+        result_data = response.json()
+        final_status = (
+            f"Submission Successful!\n"
+            f"User: {result_data.get('username')}\n"
+            f"Score: {result_data.get('score', 'N/A')}% "
+            f"({result_data.get('correct_count', '?')}/{result_data.get('total_attempted', '?')} correct)\n"
+            f"Message: {result_data.get('message', 'No message received.')}"
+        )
+        print("Submission successful.")
+        results_df = pd.DataFrame(results_log)
+        return final_status, results_df
+    except requests.exceptions.HTTPError as e:
+        error_detail = f"Server responded with status {e.response.status_code}."
+        try:
+            error_json = e.response.json()
+            error_detail += f" Detail: {error_json.get('detail', e.response.text)}"
+        except requests.exceptions.JSONDecodeError:
+            error_detail += f" Response: {e.response.text[:500]}"
+        status_message = f"Submission Failed: {error_detail}"
+        print(status_message)
+        results_df = pd.DataFrame(results_log)
+        return status_message, results_df
+    except Exception as e:
+        status_message = f"Submission error: {e}"
+        print(status_message)
+        results_df = pd.DataFrame(results_log)
+        return status_message, results_df
+
 
 # --- Build Gradio Interface using Blocks ---
 with gr.Blocks() as demo:
@@ -144,6 +250,26 @@ with gr.Blocks() as demo:
 
     gr.LoginButton()
 
+    # --- Run a Single Question ---
+    question_index = gr.Slider(
+        label="Question Index",
+        minimum=0,
+        maximum=20,
+        step=1,
+        interactive=True
+    )
+
+    run_single_button = gr.Button("Run Single Question")
+
+    single_status_output = gr.Textbox(label="Run Status / Submission Result", lines=5, interactive=False)
+    # Removed max_rows=10 from DataFrame constructor
+    single_results_table = gr.DataFrame(label="Questions and Agent Answers", wrap=True)
+
+    run_single_button.click(
+        fn=run_one_and_submit,
+        inputs=[question_index],
+        outputs=[single_status_output, single_results_table]
+    )
     run_button = gr.Button("Run Evaluation & Submit All Answers")
 
     status_output = gr.Textbox(label="Run Status / Submission Result", lines=5, interactive=False)
