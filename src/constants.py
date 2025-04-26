@@ -1,4 +1,8 @@
 import os
+import dotenv
+
+dotenv.load_dotenv()
+
 # (Keep Constants as is)
 # --- Constants ---
 

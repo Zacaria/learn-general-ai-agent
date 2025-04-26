@@ -3,11 +3,17 @@ import os
 import json
 from src.constants import questions_url
 
+_questions_cache = None
+
 def fetch_questions():
     """
     Fetch questions from the remote endpoint, with fallback to local questions.json if 429 is received.
     Returns a tuple: (error_message_or_None, questions_data_or_None)
     """
+    global _questions_cache
+    if _questions_cache is not None:
+        print("Using cached questions data.")
+        return None, _questions_cache
 
     print(f"Fetching questions from: {questions_url}")
     try:
@@ -18,6 +24,7 @@ def fetch_questions():
             print("Fetched questions list is empty.")
             return "Fetched questions list is empty or invalid format.", None
         print(f"Fetched {len(questions_data)} questions.")
+        _questions_cache = questions_data
         return None, questions_data
     except requests.exceptions.RequestException as e:
         # Fallback to local file if 429 Too Many Requests
@@ -31,6 +38,7 @@ def fetch_questions():
                     print("Local questions.json is empty or invalid format.")
                     return "Local questions.json is empty or invalid format.", None
                 print(f"Loaded {len(questions_data)} questions from local file.")
+                _questions_cache = questions_data
                 return None, questions_data
             except Exception as file_e:
                 print(f"Error loading local questions.json: {file_e}")
