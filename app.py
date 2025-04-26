@@ -10,8 +10,6 @@ import gradio as gr
 
 from src.question_choices import get_question_choices
 
-# (Keep Constants as is)
-# --- Constants ---
 from src.constants import DEFAULT_API_URL, questions_url, submit_url
 
 # --- Basic Agent Definition ---
@@ -278,6 +276,8 @@ with gr.Blocks() as demo:
         outputs=[single_status_output, single_results_table]
     )
 
+    # --- Run All Questions ---
+    gr.Markdown("# Run all questions")
     run_button = gr.Button("Run Evaluation & Submit All Answers")
 
     status_output = gr.Textbox(label="Run Status / Submission Result", lines=5, interactive=False)
