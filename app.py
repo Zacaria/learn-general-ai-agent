@@ -4,24 +4,16 @@ load_dotenv()
 import os
 
 import requests
+from src.submit_questions import submit_answers
 import pandas as pd
 
 import gradio as gr
 
 from src.question_choices import get_question_choices
 
-from src.constants import DEFAULT_API_URL, questions_url, submit_url
-
 # --- Basic Agent Definition ---
-# ----- THIS IS WERE YOU CAN BUILD WHAT YOU WANT ------
-class BasicAgent:
-    def __init__(self):
-        print("BasicAgent initialized.")
-    def __call__(self, question: str) -> str:
-        print(f"Agent received question (first 50 chars): {question[:50]}...")
-        fixed_answer = f"This is my default answer for question: {question}"
-        print(f"Agent returning fixed answer: {fixed_answer}")
-        return fixed_answer
+# Now imported from src.agent
+from src.agent import BasicAgent
 
 def run_and_submit_all(profile: gr.OAuthProfile | None):
     """
@@ -38,10 +30,6 @@ def run_and_submit_all(profile: gr.OAuthProfile | None):
         print("User not logged in.")
         return "Please Login to Hugging Face with the button.", None
 
-    api_url = DEFAULT_API_URL
-    questions_url = f"{api_url}/questions"
-    submit_url = f"{api_url}/submit"
-
     # 1. Instantiate Agent ( modify this part to create your agent)
     try:
         agent = BasicAgent()
@@ -53,9 +41,8 @@ def run_and_submit_all(profile: gr.OAuthProfile | None):
     print(agent_code)
 
     # 2. Fetch Questions
-    print(f"Fetching questions from: {questions_url}")
     from src.question_fetcher import fetch_questions
-    err, questions_data = fetch_questions(questions_url)
+    err, questions_data = fetch_questions()
     if err:
         return err, None
     # 3. Run your Agent
@@ -86,47 +73,7 @@ def run_and_submit_all(profile: gr.OAuthProfile | None):
     print(status_update)
 
     # 5. Submit
-    print(f"Submitting {len(answers_payload)} answers to: {submit_url}")
-    try:
-        response = requests.post(submit_url, json=submission_data, timeout=60)
-        response.raise_for_status()
-        result_data = response.json()
-        final_status = (
-            f"Submission Successful!\n"
-            f"User: {result_data.get('username')}\n"
-            f"Overall Score: {result_data.get('score', 'N/A')}% "
-            f"({result_data.get('correct_count', '?')}/{result_data.get('total_attempted', '?')} correct)\n"
-            f"Message: {result_data.get('message', 'No message received.')}"
-        )
-        print("Submission successful.")
-        results_df = pd.DataFrame(results_log)
-        return final_status, results_df
-    except requests.exceptions.HTTPError as e:
-        error_detail = f"Server responded with status {e.response.status_code}."
-        try:
-            error_json = e.response.json()
-            error_detail += f" Detail: {error_json.get('detail', e.response.text)}"
-        except requests.exceptions.JSONDecodeError:
-            error_detail += f" Response: {e.response.text[:500]}"
-        status_message = f"Submission Failed: {error_detail}"
-        print(status_message)
-        results_df = pd.DataFrame(results_log)
-        return status_message, results_df
-    except requests.exceptions.Timeout:
-        status_message = "Submission Failed: The request timed out."
-        print(status_message)
-        results_df = pd.DataFrame(results_log)
-        return status_message, results_df
-    except requests.exceptions.RequestException as e:
-        status_message = f"Submission Failed: Network error - {e}"
-        print(status_message)
-        results_df = pd.DataFrame(results_log)
-        return status_message, results_df
-    except Exception as e:
-        status_message = f"An unexpected error occurred during submission: {e}"
-        print(status_message)
-        results_df = pd.DataFrame(results_log)
-        return status_message, results_df
+    return submit_answers(submission_data, results_log)
 
 def _run_one_and_submit_with_index(profile: gr.OAuthProfile | None, question_index: int):
     """
@@ -161,9 +108,8 @@ def _run_one_and_submit_with_index(profile: gr.OAuthProfile | None, question_ind
     print(agent_code)
 
     # 2. Fetch Questions
-    print(f"Fetching questions from: {questions_url}")
     from src.question_fetcher import fetch_questions
-    err, questions_data = fetch_questions(questions_url)
+    err, questions_data = fetch_questions()
     if err:
         return err, None
     
@@ -198,37 +144,7 @@ def _run_one_and_submit_with_index(profile: gr.OAuthProfile | None, question_ind
     print(status_update)
 
     # 5. Submit
-    print(f"Submitting answer to: {submit_url}")
-    try:
-        response = requests.post(submit_url, json=submission_data, timeout=60)
-        response.raise_for_status()
-        result_data = response.json()
-        final_status = (
-            f"Submission Successful!\n"
-            f"User: {result_data.get('username')}\n"
-            f"Score: {result_data.get('score', 'N/A')}% "
-            f"({result_data.get('correct_count', '?')}/{result_data.get('total_attempted', '?')} correct)\n"
-            f"Message: {result_data.get('message', 'No message received.')}"
-        )
-        print("Submission successful.")
-        results_df = pd.DataFrame(results_log)
-        return final_status, results_df
-    except requests.exceptions.HTTPError as e:
-        error_detail = f"Server responded with status {e.response.status_code}."
-        try:
-            error_json = e.response.json()
-            error_detail += f" Detail: {error_json.get('detail', e.response.text)}"
-        except requests.exceptions.JSONDecodeError:
-            error_detail += f" Response: {e.response.text[:500]}"
-        status_message = f"Submission Failed: {error_detail}"
-        print(status_message)
-        results_df = pd.DataFrame(results_log)
-        return status_message, results_df
-    except Exception as e:
-        status_message = f"Submission error: {e}"
-        print(status_message)
-        results_df = pd.DataFrame(results_log)
-        return status_message, results_df
+    return submit_answers(submission_data, results_log)
 
 
 # --- Build Gradio Interface using Blocks ---
@@ -294,6 +210,14 @@ if __name__ == "__main__":
     # Check for SPACE_HOST and SPACE_ID at startup for information
     space_host_startup = os.getenv("SPACE_HOST")
     space_id_startup = os.getenv("SPACE_ID") # Get SPACE_ID at startup
+
+    # Check and display DRY_RUN status
+    dry_run = os.environ.get("DRY_RUN", "").lower() == "true"
+    if dry_run:
+        print("🧪 DRY_RUN mode is active. Submissions will be mocked.")
+    else:
+        print("🚀 Live submission mode is active.")
+
 
     if space_host_startup:
         print(f"✅ SPACE_HOST found: {space_host_startup}")

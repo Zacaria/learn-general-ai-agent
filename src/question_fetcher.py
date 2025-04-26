@@ -1,12 +1,15 @@
 import requests
 import os
 import json
+from src.constants import questions_url
 
-def fetch_questions(questions_url):
+def fetch_questions():
     """
     Fetch questions from the remote endpoint, with fallback to local questions.json if 429 is received.
     Returns a tuple: (error_message_or_None, questions_data_or_None)
     """
+
+    print(f"Fetching questions from: {questions_url}")
     try:
         response = requests.get(questions_url, timeout=15)
         response.raise_for_status()

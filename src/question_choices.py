@@ -1,5 +1,4 @@
 from src.question_fetcher import fetch_questions
-from src.constants import questions_url
 
 def get_question_choices():
     """
@@ -7,7 +6,7 @@ def get_question_choices():
     - choices: List of question strings for UI selection.
     - index_map: Dict mapping question string to its index in the original list.
     """
-    err, questions_data = fetch_questions(questions_url)
+    err, questions_data = fetch_questions()
     if err or not questions_data:
         return [], {}
     choices = [q.get("question", f"Question {i}") for i, q in enumerate(questions_data)]
