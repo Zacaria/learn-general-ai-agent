@@ -1,7 +1,6 @@
 import os
 import gradio as gr
 import requests
-import inspect
 import pandas as pd
 
 # (Keep Constants as is)
@@ -50,25 +49,10 @@ def run_and_submit_all( profile: gr.OAuthProfile | None):
 
     # 2. Fetch Questions
     print(f"Fetching questions from: {questions_url}")
-    try:
-        response = requests.get(questions_url, timeout=15)
-        response.raise_for_status()
-        questions_data = response.json()
-        if not questions_data:
-             print("Fetched questions list is empty.")
-             return "Fetched questions list is empty or invalid format.", None
-        print(f"Fetched {len(questions_data)} questions.")
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching questions: {e}")
-        return f"Error fetching questions: {e}", None
-    except requests.exceptions.JSONDecodeError as e:
-         print(f"Error decoding JSON response from questions endpoint: {e}")
-         print(f"Response text: {response.text[:500]}")
-         return f"Error decoding server response for questions: {e}", None
-    except Exception as e:
-        print(f"An unexpected error occurred fetching questions: {e}")
-        return f"An unexpected error occurred fetching questions: {e}", None
-
+    from src.question_fetcher import fetch_questions
+    err, questions_data = fetch_questions(questions_url)
+    if err:
+        return err, None
     # 3. Run your Agent
     results_log = []
     answers_payload = []
