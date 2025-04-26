@@ -4,7 +4,9 @@ from src.submit_questions import submit_answers
 import pandas as pd
 import gradio as gr
 from src.question_choices import get_question_choices
-from src.agent import BasicAgent
+from src.question_fetcher import fetch_questions
+from src.agent import BasicAgent, call_agent
+from src.constants import agent_code
 
 load_dotenv()
 
@@ -14,8 +16,6 @@ def run_and_submit_all(profile: gr.OAuthProfile | None):
     and displays the results.
     """
     # --- Determine HF Space Runtime URL and Repo URL ---
-    space_id = os.getenv("SPACE_ID") # Get the SPACE_ID for sending link to the code
-
     if profile:
         username= f"{profile.username}"
         print(f"User logged in: {username}")
@@ -29,12 +29,10 @@ def run_and_submit_all(profile: gr.OAuthProfile | None):
     except Exception as e:
         print(f"Error instantiating agent: {e}")
         return f"Error initializing agent: {e}", None
-    # In the case of an app running as a hugging Face space, this link points toward your codebase ( usefull for others so please keep it public)
-    agent_code = f"https://huggingface.co/spaces/{space_id}/tree/main"
+    
     print(agent_code)
 
     # 2. Fetch Questions
-    from src.question_fetcher import fetch_questions
     err, questions_data = fetch_questions()
     if err:
         return err, None
@@ -43,18 +41,10 @@ def run_and_submit_all(profile: gr.OAuthProfile | None):
     answers_payload = []
     print(f"Running agent on {len(questions_data)} questions...")
     for item in questions_data:
-        task_id = item.get("task_id")
-        question_text = item.get("question")
-        if not task_id or question_text is None:
-            print(f"Skipping item with missing task_id or question: {item}")
-            continue
-        try:
-            submitted_answer = agent(question_text)
-            answers_payload.append({"task_id": task_id, "submitted_answer": submitted_answer})
-            results_log.append({"Task ID": task_id, "Question": question_text, "Submitted Answer": submitted_answer})
-        except Exception as e:
-             print(f"Error running agent on task {task_id}: {e}")
-             results_log.append({"Task ID": task_id, "Question": question_text, "Submitted Answer": f"AGENT ERROR: {e}"})
+        result_log, answer_payload = call_agent(agent, item)
+        if result_log is not None and answer_payload is not None:
+            results_log.append(result_log)
+            answers_payload.append(answer_payload)
 
     if not answers_payload:
         print("Agent did not produce any answers to submit.")
@@ -68,21 +58,19 @@ def run_and_submit_all(profile: gr.OAuthProfile | None):
     # 5. Submit
     return submit_answers(submission_data, results_log)
 
-def _run_one_and_submit_with_index(profile: gr.OAuthProfile | None, question_index: int):
+def run_one_and_submit(profile: gr.OAuthProfile | None, selected_q: str):
     """
     Fetches questions, runs the BasicAgent on a specific question, submits the answer,
     and displays the result.
     
     Args:
         profile: The user's OAuth profile
-        question_index: The index of the question to run
+        selected_q: The question string to run
     
     Returns:
         Tuple of (status message, results dataframe)
     """
     # --- Determine HF Space Runtime URL and Repo URL ---
-    space_id = os.getenv("SPACE_ID")
-
     if profile:
         username = f"{profile.username}"
         print(f"User logged in: {username}")
@@ -97,14 +85,15 @@ def _run_one_and_submit_with_index(profile: gr.OAuthProfile | None, question_ind
         print(f"Error instantiating agent: {e}")
         return f"Error initializing agent: {e}", None
     
-    agent_code = f"https://huggingface.co/spaces/{space_id}/tree/main"
     print(agent_code)
 
     # 2. Fetch Questions
-    from src.question_fetcher import fetch_questions
     err, questions_data = fetch_questions()
     if err:
         return err, None
+
+    _, question_index_map = get_question_choices()
+    question_index = question_index_map.get(selected_q, 0)
     
     # Check if question_index is valid
     if question_index < 0 or question_index >= len(questions_data):
@@ -115,21 +104,11 @@ def _run_one_and_submit_with_index(profile: gr.OAuthProfile | None, question_ind
     answers_payload = []
     
     item = questions_data[question_index]
-    task_id = item.get("task_id")
-    question_text = item.get("question")
-    
-    if not task_id or question_text is None:
-        print(f"Invalid question item: {item}")
+    result_log, answer_payload = call_agent(agent, item)
+    if result_log is None or answer_payload is None:
         return "Invalid question item with missing task_id or question.", None
-    
-    try:
-        submitted_answer = agent(question_text)
-        answers_payload.append({"task_id": task_id, "submitted_answer": submitted_answer})
-        results_log.append({"Task ID": task_id, "Question": question_text, "Submitted Answer": submitted_answer})
-    except Exception as e:
-        print(f"Error running agent on task {task_id}: {e}")
-        results_log.append({"Task ID": task_id, "Question": question_text, "Submitted Answer": f"AGENT ERROR: {e}"})
-        return f"Agent error on question {question_index}: {e}", pd.DataFrame(results_log)
+    results_log.append(result_log)
+    answers_payload.append(answer_payload)
 
     # 4. Prepare Submission 
     submission_data = {"username": username.strip(), "agent_code": agent_code, "answers": answers_payload}
@@ -174,10 +153,6 @@ with gr.Blocks() as demo:
 
     single_status_output = gr.Textbox(label="Run Status / Submission Result", lines=5, interactive=False)
     single_results_table = gr.DataFrame(label="Questions and Agent Answers", wrap=True)
-
-    def run_one_and_submit(profile: gr.OAuthProfile | None, selected_q: str):
-        question_index = question_index_map.get(selected_q, 0)
-        return _run_one_and_submit_with_index(profile, question_index)
 
     run_single_button.click(
         fn=run_one_and_submit,
