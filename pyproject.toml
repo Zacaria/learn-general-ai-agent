@@ -7,5 +7,8 @@ requires-python = ">=3.11"
 dependencies = [
     "asyncio>=3.4.3",
     "dotenv>=0.9.9",
+    "gradio[oauth]>=5.27.0",
+    "panda>=0.3.1",
+    "requests>=2.32.3",
     "ruff>=0.11.7",
 ]

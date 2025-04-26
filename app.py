@@ -2,6 +2,9 @@ import os
 import gradio as gr
 import requests
 import pandas as pd
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # (Keep Constants as is)
 # --- Constants ---
@@ -18,7 +21,7 @@ class BasicAgent:
         print(f"Agent returning fixed answer: {fixed_answer}")
         return fixed_answer
 
-def run_and_submit_all( profile: gr.OAuthProfile | None):
+def run_and_submit_all(profile: gr.OAuthProfile | None):
     """
     Fetches all questions, runs the BasicAgent on them, submits all answers,
     and displays the results.
@@ -251,23 +254,35 @@ with gr.Blocks() as demo:
     gr.LoginButton()
 
     # --- Run a Single Question ---
-    question_index = gr.Slider(
-        label="Question Index",
-        minimum=0,
-        maximum=20,
-        step=1,
+    from src.question_choices import get_question_choices
+    api_url = DEFAULT_API_URL
+    questions_url = f"{api_url}/questions"
+    question_choices, question_index_map = get_question_choices(questions_url)
+
+    question_dropdown = gr.Dropdown(
+        choices=question_choices,
+        label="Select a Question",
         interactive=True
     )
 
     run_single_button = gr.Button("Run Single Question")
 
     single_status_output = gr.Textbox(label="Run Status / Submission Result", lines=5, interactive=False)
-    # Removed max_rows=10 from DataFrame constructor
     single_results_table = gr.DataFrame(label="Questions and Agent Answers", wrap=True)
 
+    def get_index_from_question(selected_question):
+        # Map selected question string to its index
+        return question_index_map.get(selected_question, 0)
+
+    # --- Add OAuthProfile input for Gradio ---
+    # profile_input = gr.OAuthProfile()
+
+    def call_run_one_and_submit(profile, selected_q):
+        return run_one_and_submit(profile, get_index_from_question(selected_q))
+
     run_single_button.click(
-        fn=run_one_and_submit,
-        inputs=[question_index],
+        fn=call_run_one_and_submit,
+        inputs=[question_dropdown],
         outputs=[single_status_output, single_results_table]
     )
     run_button = gr.Button("Run Evaluation & Submit All Answers")
