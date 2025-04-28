@@ -17,6 +17,7 @@ def submit_answers(submission_data, results_log):
 
 
     print(f"Submitting {len(submission_data['answers'])} answers to: {submit_url}")
+    print(f"Submission payload: {submission_data}")
     try:
         response = requests.post(submit_url, json=submission_data, timeout=60)
         response.raise_for_status()
@@ -37,7 +38,7 @@ def submit_answers(submission_data, results_log):
             error_json = e.response.json()
             error_detail += f" Detail: {error_json.get('detail', e.response.text)}"
         except requests.exceptions.JSONDecodeError:
-            error_detail += f" Response: {e.response.text[:500]}"
+            error_detail += f" Response: {e.response.text}"
         status_message = f"Submission Failed: {error_detail}"
         print(status_message)
         results_df = pd.DataFrame(results_log)
