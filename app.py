@@ -12,7 +12,7 @@ load_dotenv()
 
 def run_and_submit_all(profile: gr.OAuthProfile | None):
     """
-    Fetches all questions, runs the BasicAgent on them, submits all answers,
+    Fetches all questions, runs the ManagerAgent on them, submits all answers,
     and displays the results.
     """
     # --- Determine HF Space Runtime URL and Repo URL ---
@@ -60,7 +60,7 @@ def run_and_submit_all(profile: gr.OAuthProfile | None):
 
 def run_one_and_submit(profile: gr.OAuthProfile | None, selected_q: str):
     """
-    Fetches questions, runs the BasicAgent on a specific question, submits the answer,
+    Fetches questions, runs the ManagerAgent on a specific question, submits the answer,
     and displays the result.
     
     Args:

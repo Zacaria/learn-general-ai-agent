@@ -1,12 +1,10 @@
 
 import re
 from smolagents import CodeAgent
-from src.tools import search_tool, visit_tool
 from src.models import general_model
-# from src.tool_understand_web_page import understand_webpage_tool
-from src.agent_rag import rag_tool
+from src.tool_rag import rag_tool
 
-# # GAIA system prompt
+# Original GAIA system prompt
 
 # systemPromptGAIA = (
 #     f"You are a general AI assistant."
@@ -62,26 +60,6 @@ def extract_final_answer(response: str) -> str:
         return ""
     return str(response)
 
-class BasicAgent:
-    def __init__(self):
-        self.agent = CodeAgent(
-            model=general_model,
-            tools=[search_tool, visit_tool],
-            add_base_tools=True,
-            max_steps=10,
-        )
-
-        print("BasicAgent initialized.")
-
-    def __call__(self, question: str) -> str:
-        print(f"Agent received question (first 50 chars): {question[:50]}...")
-        
-        messages = format_prompt_for_code_agent(question)
-        output = self.agent.run(messages)
-        print(f"Agent output: {output}")
-        final_answer = extract_final_answer(output)
-        return final_answer
-
 class ManagerAgent:
     def __init__(self):
         self.agent = CodeAgent(
@@ -91,6 +69,7 @@ class ManagerAgent:
             max_steps=10,
             name="ManagerAgent"
         )
+        self.agent.visualize()
 
         print("ManagerAgent initialized.")
     

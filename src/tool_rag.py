@@ -17,8 +17,8 @@ systemPrompt = (
 def format_prompt(question: str) -> str:
     return f"{systemPrompt}\n{question}"
 
-class AgentRAG(Tool):
-    name = "AgentRAG"
+class RAGTool(Tool):
+    name = "RAGTool"
     description = "This tool is responsible for answering the user's question by using search and visit tools to retrieve information from webpages."
     inputs = {
         "question": {
@@ -31,7 +31,7 @@ class AgentRAG(Tool):
     def __init__(self):
         self.agent = CodeAgent(
             model=general_model,
-            tools=[search_tool, visit_tool, understand_webpage_tool],
+            tools=[search_tool, understand_webpage_tool],
             add_base_tools=True,
             max_steps=10,
             name="AgentRAG",
@@ -47,4 +47,4 @@ class AgentRAG(Tool):
         final_answer = output
         return str(final_answer)
 
-rag_tool = AgentRAG()
+rag_tool = RAGTool()

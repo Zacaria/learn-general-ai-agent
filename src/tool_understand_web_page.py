@@ -3,7 +3,7 @@ from src.tools import visit_tool
 from src.models import general_model
 
 system_prompt = (
-    f"You are a specialized agent. You must answer the user's question using ONLY the content of the given webpage. "
+    f"You are a specialized agent. You must answer the user's question using ONLY the content of the given webpage."
     f"If the answer cannot be found or inferred from the webpage, respond with: 'EXCEPTION: The webpage does not allow answering the question.'"
     f"Before answering, you must control that the answer is coherent with the question."
     f"If the answer is not coherent with the question, respond with: 'EXCEPTION: The answer is not coherent with the question.'"
