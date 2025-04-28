@@ -16,6 +16,18 @@ Check out the configuration reference at https://huggingface.co/docs/hub/spaces-
 
 ---
 
-Save dependencies in `requirements.txt`
+## Dev
+
+`uv run pymon app.py`
+
+## Save dependencies in `requirements.txt`
 
 `uv pip compile pyproject.toml -o requirements.txt`
+
+## Environment variables
+
+Add the following environment variables to your `.env` file:
+
+```env
+OPENAI_API_KEY=your_openai_api_key
+```

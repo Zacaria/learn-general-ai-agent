@@ -1,7 +1,6 @@
 import requests
 import pandas as pd
-from src.constants import submit_url
-import os
+from src.constants import submit_url, is_dry_run
 
 def submit_answers(submission_data, results_log):
     """
@@ -13,7 +12,7 @@ def submit_answers(submission_data, results_log):
         Tuple[str, pd.DataFrame]: Status message and results DataFrame.
     """
     # Check if DRY_RUN environment variable is set to "true"
-    if os.environ.get("DRY_RUN", "").lower() == "true":
+    if is_dry_run:
         return mock_submit_answers(submission_data, results_log)
 
 

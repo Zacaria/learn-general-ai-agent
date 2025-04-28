@@ -5,8 +5,8 @@ import pandas as pd
 import gradio as gr
 from src.question_choices import get_question_choices
 from src.question_fetcher import fetch_questions
-from src.agent import BasicAgent, call_agent
-from src.constants import agent_code
+from src.agent import ManagerAgent, call_agent
+from src.constants import agent_code, is_dry_run
 
 load_dotenv()
 
@@ -25,7 +25,7 @@ def run_and_submit_all(profile: gr.OAuthProfile | None):
 
     # 1. Instantiate Agent ( modify this part to create your agent)
     try:
-        agent = BasicAgent()
+        agent = ManagerAgent()
     except Exception as e:
         print(f"Error instantiating agent: {e}")
         return f"Error initializing agent: {e}", None
@@ -80,7 +80,7 @@ def run_one_and_submit(profile: gr.OAuthProfile | None, selected_q: str):
 
     # 1. Instantiate Agent
     try:
-        agent = BasicAgent()
+        agent = ManagerAgent()
     except Exception as e:
         print(f"Error instantiating agent: {e}")
         return f"Error initializing agent: {e}", None
@@ -180,8 +180,7 @@ if __name__ == "__main__":
     space_id_startup = os.getenv("SPACE_ID") # Get SPACE_ID at startup
 
     # Check and display DRY_RUN status
-    dry_run = os.environ.get("DRY_RUN", "").lower() == "true"
-    if dry_run:
+    if is_dry_run:
         print("🧪 DRY_RUN mode is active. Submissions will be mocked.")
     else:
         print("🚀 Live submission mode is active.")
