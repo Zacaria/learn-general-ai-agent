@@ -1,5 +1,5 @@
 from smolagents import CodeAgent, Tool
-from src.tools import visit_tool
+from src.tools.general import visit_tool
 from src.models import general_model
 
 system_prompt = (
@@ -8,7 +8,6 @@ system_prompt = (
     f"Before answering, you must control that the answer is coherent with the question."
     f"If the answer is not coherent with the question, respond with: 'EXCEPTION: The answer is not coherent with the question.'"
 )
-
 
 def format_prompt_for_webpage_agent(url: str, question: str) -> str:
     return f"{system_prompt}\nURL: {url}\nQuestion: {question}"

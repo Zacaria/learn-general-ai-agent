@@ -2,3 +2,5 @@
 __pycache__
 .ruff_cache
 .env
+*.mp3
+*.mp4

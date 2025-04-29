@@ -30,6 +30,7 @@ def submit_answers(submission_data, results_log):
             f"Message: {result_data.get('message', 'No message received.')}"
         )
         print("Submission successful.")
+        print(final_status)
         results_df = pd.DataFrame(results_log)
         return final_status, results_df
     except requests.exceptions.HTTPError as e:

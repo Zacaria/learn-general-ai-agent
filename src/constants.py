@@ -10,6 +10,7 @@ DEFAULT_API_URL = "https://agents-course-unit4-scoring.hf.space"
 
 questions_url = f"{DEFAULT_API_URL}/questions"
 submit_url = f"{DEFAULT_API_URL}/submit"
+files_url = f"{DEFAULT_API_URL}/files"
 space_id = os.getenv("SPACE_ID")
 
 # In the case of an app running as a hugging Face space, this link points toward your codebase (usefull for others so please keep it public)

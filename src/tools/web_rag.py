@@ -1,7 +1,7 @@
 
 from smolagents import CodeAgent, Tool
-from src.tool_understand_web_page import understand_webpage_tool
-from src.tools import search_tool, visit_tool
+from src.tools.understand_web_page import understand_webpage_tool
+from src.tools.general import search_tool
 from src.models import general_model
 
 systemPrompt = (
@@ -47,4 +47,4 @@ class RAGTool(Tool):
         final_answer = output
         return str(final_answer)
 
-rag_tool = RAGTool()
+web_rag_tool = RAGTool()
