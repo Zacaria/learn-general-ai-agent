@@ -32,7 +32,7 @@ class UnderstandWebPageTool(Tool):
             model=general_model,
             tools=[visit_tool],
             add_base_tools=True,
-            max_steps=6,
+            # max_steps=6,
             name="UnderstandWebPageAgent",
             description="This agent is responsible for answering the user's question using ONLY the content of the given webpage. If the answer cannot be found or inferred from the webpage, the agent will respond with an exception saying that the webpage does not allow answering the question.",
         )

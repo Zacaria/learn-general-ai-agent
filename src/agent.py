@@ -5,9 +5,10 @@ import traceback
 import re
 from smolagents import CodeAgent
 from src.models import general_model
-from src.tools.web_rag import web_rag_tool
+from src.tools.web_rag import web_rag_agent
 from src.constants import files_url
 from src.agent_understand_file import understand_file_agent
+from src.tools.chess import chess_agent
 
 # Original GAIA system prompt
 
@@ -22,13 +23,16 @@ from src.agent_understand_file import understand_file_agent
 
 # Custom system prompt
 systemPrompt = (
-    f"You are a general AI assistant. I will ask you a QUESTION. Report your thoughts, and finish your answer with the following template: FINAL ANSWER: [YOUR FINAL ANSWER]."
+    f"You are a general multi agent AI assistant."
+    "You have at your disposal three agents specialized in understanding files, searching the web, and chess."
+    "I will ask you a QUESTION. Use them to gather information, report your thoughts, and finish your answer with the following template: FINAL ANSWER: [YOUR FINAL ANSWER]."
     "Some questions will have an optional file attached. If a file is attached, you should ALWAYS start by understanding what the file brings to the conversation, and then use it to answer the question."
     "To understand a file you should ALWAYS start by using your specialized agent in understanding files."
     "YOUR FINAL ANSWER should be a number OR as few words as possible OR a comma separated list of numbers and/or strings."
     "If you are asked for a number, don't use comma to write your number neither use units such as $ or percent sign unless specified otherwise."
     "If you are asked for a string, don't use articles, neither abbreviations (e.g. for cities), and write the digits in plain text unless specified otherwise."
     "If you are asked for a comma separated list, apply the above rules depending of whether the element to be put in the list is a number or a string."
+    "Again, make sure you answer with a number OR as few words as possible OR a comma separated list of numbers and/or strings."
 )
 
 # def format_messages(question: str, file_url: str, file_type: str):
@@ -75,8 +79,8 @@ class ManagerAgent:
     def __init__(self):
         self.agent = CodeAgent(
             model=general_model,
-            tools=[web_rag_tool],
-            managed_agents=[understand_file_agent],
+            tools=[],
+            managed_agents=[understand_file_agent, web_rag_agent, chess_agent],
             add_base_tools=True,
             max_steps=10,
             name="ManagerAgent",

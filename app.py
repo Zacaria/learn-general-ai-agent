@@ -140,19 +140,6 @@ with gr.Blocks() as demo:
     gr.LoginButton()
 
     question_choices, question_index_map = get_question_choices()
-    # question_dropdown = gr.Dropdown(
-    #     choices=question_choices,
-    #     label="Select a Question",
-    #     interactive=True
-    # )
-    
-    # # --- Custom Question ---
-
-    # gr.Markdown("# Custom Question on item")
-    # custom_question_textbox = gr.Textbox(label="Enter your question here")
-    # custom_question_button = gr.Button("Run Custom Question")
-    # custom_question_status_output = gr.Textbox(label="Run Status / Submission Result", lines=5, interactive=False)
-    # custom_question_results_table = gr.DataFrame(label="Questions and Agent Answers", wrap=True)
 
     # --- Run a Single Question ---
     gr.Markdown("# Run one question")
@@ -192,7 +179,7 @@ if __name__ == "__main__":
     print("\n" + "-"*30 + " App Starting " + "-"*30)
     # Check for SPACE_HOST and SPACE_ID at startup for information
     space_host_startup = os.getenv("SPACE_HOST")
-    space_id_startup = os.getenv("SPACE_ID") # Get SPACE_ID at startup
+    space_id_startup = os.getenv("SPACE_ID") 
 
     # Check and display DRY_RUN status
     if is_dry_run:

@@ -1,6 +1,7 @@
-from smolagents import CodeAgent, Tool, FinalAnswerTool, PythonInterpreterTool, SpeechToTextTool
+from smolagents import CodeAgent, FinalAnswerTool, PythonInterpreterTool
 from src.models import general_model
 from src.tools.audio_url_to_text import AudioUrlToTextTool
+from src.tools.vision import VisionTool
 
 system_prompt = (
     f"You are a specialized agent in understanding files."
@@ -14,7 +15,7 @@ system_prompt = (
 
 understand_file_agent = CodeAgent(
     model=general_model,
-    tools=[FinalAnswerTool(), PythonInterpreterTool(), AudioUrlToTextTool()],
+    tools=[FinalAnswerTool(), PythonInterpreterTool(), AudioUrlToTextTool(), VisionTool()],
     add_base_tools=False,
     max_steps=10,
     name="UnderstandFileAgent",

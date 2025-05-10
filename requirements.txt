@@ -40,6 +40,8 @@ cffi==1.17.1
     #   soundfile
 charset-normalizer==3.4.1
     # via requests
+chess==1.11.2
+    # via learn-general-ai-agent (pyproject.toml)
 click==8.1.8
     # via
     #   duckduckgo-search
@@ -56,6 +58,8 @@ dotenv==0.9.9
     # via learn-general-ai-agent (pyproject.toml)
 duckduckgo-search==8.0.1
     # via smolagents
+et-xmlfile==2.0.0
+    # via openpyxl
 fastapi==0.115.12
     # via gradio
 ffmpeg==1.4
@@ -160,6 +164,8 @@ numpy==2.2.5
     #   transformers
 openai==1.76.0
     # via litellm
+openpyxl==3.1.5
+    # via learn-general-ai-agent (pyproject.toml)
 orjson==3.10.16
     # via gradio
 packaging==25.0
